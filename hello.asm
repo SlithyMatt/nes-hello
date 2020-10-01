@@ -1,18 +1,17 @@
 .include "ppu.inc"
 .include "apu.inc"
 
+.include "neshdr.asm"
+.include "neschar.asm"
+
 .segment "STARTUP"
-.segment "INIT"
-.segment "ONCE"
 .segment "CODE"
 
    jmp start
 
 hello_str: .asciiz "Hello, World!"
 
-START_X        = 7
-START_Y        = 2
-START_NT_ADDR  = $2000 + 32*START_Y + START_X
+DEFMASK        = %00001000 ; background enabled
 
 .macro WAIT_VBLANK
 :  bit PPUSTATUS
@@ -67,19 +66,76 @@ start:
    lda #(RED | LIGHT)
    sta PPUDATA ; color 3 = light red
 
-   lda #>START_NT_ADDR
+
+   ; set all table A tiles to palette 0
+   lda #>ATTRTABLE_A
    sta PPUADDR
-   lda #<START_NT_ADDR
+   lda #<ATTRTABLE_A
    sta PPUADDR
+   lda #0
+   ldx #64
+@attr_loop:
+   sta PPUDATA
+   dex
+   bne @attr_loop
+
+   ; place string character tiles
+   lda #>NAMETABLE_A
+   sta PPUADDR
+   lda #<NAMETABLE_A
+   sta PPUADDR
+
+   ; first, write out padding
+   ldx #137
+   lda #0
+@pad_loop:
+   sta PPUDATA
+   dex
+   bne @pad_loop
+
    ldx #0
 @string_loop:
    lda hello_str,x
-   beq @game_loop
+   beq @render
    sta PPUDATA
    inx
    jmp @string_loop
+
+@render:
+   lda #DEFMASK
+   sta PPUMASK
 
 @game_loop:
    WAIT_VBLANK
    ; do something
    jmp @game_loop
+
+
+; ------------------------------------------------------------------------
+; System V-Blank Interrupt
+; ------------------------------------------------------------------------
+
+nmi:
+   pha
+
+   ; refresh scroll position to 0,0
+   lda #0
+   sta PPUSCROLL
+   sta PPUSCROLL
+
+   ; keep default PPU config
+   sta PPUCTRL
+   lda #DEFMASK
+   sta PPUMASK
+
+   pla
+
+   ; Interrupt exit
+irq:
+   rti
+
+
+.segment "VECTORS"
+.word   nmi         ; $fffa vblank nmi
+.word   start       ; $fffc reset
+.word   irq         ; $fffe irq / brk
