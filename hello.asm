@@ -15,7 +15,7 @@ DEFMASK        = %00001000 ; background enabled
 
 START_X        = 9
 START_Y        = 14
-START_NT_ADDR  = $2000 + 32*START_Y + START_X
+START_NT_ADDR  = NAMETABLE_A + 32*START_Y + START_X
 
 .macro WAIT_VBLANK
 :  bit PPUSTATUS
