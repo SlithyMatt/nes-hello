@@ -54,3 +54,4 @@ dkms.conf
 *.list
 *.bin
 *.nes
+*.deb

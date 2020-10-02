@@ -13,6 +13,10 @@ hello_str: .asciiz "Hello, World!"
 
 DEFMASK        = %00001000 ; background enabled
 
+START_X        = 9
+START_Y        = 14
+START_NT_ADDR  = $2000 + 32*START_Y + START_X
+
 .macro WAIT_VBLANK
 :  bit PPUSTATUS
    bpl :-
@@ -48,9 +52,6 @@ start:
 
    WAIT_VBLANK
 
-   ; set scroll position to 0,0
-   sta PPUSCROLL ; x = 0
-   sta PPUSCROLL ; y = 0
    ; start writing to palette, starting with background color
    lda #>BG_COLOR
    sta PPUADDR
@@ -66,7 +67,20 @@ start:
    lda #(RED | LIGHT)
    sta PPUDATA ; color 3 = light red
 
+   ; place string character tiles
+   lda #>START_NT_ADDR
+   sta PPUADDR
+   lda #<START_NT_ADDR
+   sta PPUADDR
+   ldx #0
+@string_loop:
+   lda hello_str,x
+   beq @setpal
+   sta PPUDATA
+   inx
+   jmp @string_loop
 
+@setpal:
    ; set all table A tiles to palette 0
    lda #>ATTRTABLE_A
    sta PPUADDR
@@ -79,29 +93,11 @@ start:
    dex
    bne @attr_loop
 
-   ; place string character tiles
-   lda #>NAMETABLE_A
-   sta PPUADDR
-   lda #<NAMETABLE_A
-   sta PPUADDR
-
-   ; first, write out padding
-   ldx #137
+   ; set scroll position to 0,0
    lda #0
-@pad_loop:
-   sta PPUDATA
-   dex
-   bne @pad_loop
-
-   ldx #0
-@string_loop:
-   lda hello_str,x
-   beq @render
-   sta PPUDATA
-   inx
-   jmp @string_loop
-
-@render:
+   sta PPUSCROLL ; x = 0
+   sta PPUSCROLL ; y = 0
+   ; enable display
    lda #DEFMASK
    sta PPUMASK
 
