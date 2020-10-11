@@ -15,3 +15,7 @@ cl65 -t nes -o hello.nes -l hello.list hello.asm
 You can then load hello.nes into the NES/FamiCom emulator of your choice. It has been
 tested on Linux using FCEUX and Higan. If you have an issue with any other emulator or
 host environment, please post an issue to this repo. Thanks!
+
+See video on YouTube:
+
+[![Hello, NES!](http://img.youtube.com/vi/eMw_QGwJsb4/0.jpg)](https://youtu.be/eMw_QGwJsb4)
